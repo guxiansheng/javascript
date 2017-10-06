@@ -1,0 +1,59 @@
+hello world:
+　　第一次写博客 目的是为了记录自己学习的痕迹 自娱自乐 有点小小的激动。写的烂 轻拍！！！
+　　第一次看库的源码 选择underscore库 这个库听说比较简单 作为一名初级前端的首选阅读库 不知道是不是真的 废话还是少说 跟我一起来 看看源码吧！！！
+ 
+作为underscore工具库的 开始部分有两个地方让我产生了困惑 有点让我费解！思考良久 也参考了别人的 意见 ：
+第一个地方是这个函数：
+var optimizeCb = function(func, context, argCount) {
+　　if (context === void 0) {
+　　　　return func;
+　　}
+　　switch (argCount == null ? 3 : argCount) {
+　　　　case 1:
+　　　　　　return function(value) {
+　　　　　　return func.call(context, value);
+　　　　};
+　　　　case 2:
+　　　　　　return function(value, other) {
+　　　　　　return func.call(context, value, other);
+　　　　};
+　　　　case 3:
+　　　　　　return function(value, index, collection) {
+　　　　　　return func.call(context, value, index, collection);
+　　　　};
+　　　　case 4:
+　　　　　　return function(accumulator, value, index, collection) {
+　　　　　　func.call(context, accumulator, value, index, collection);
+　　　　};
+　　}
+ 
+　　// 其实可以在这里一次解决  
+　　return function() {
+　　　　return func.apply(context, arguments);
+　　};
+};
+为什么 最后可以用apply解决的事情 还要在前面 写一堆switch case 然后里面用call来调用了    因为： call 比 apply要快
+
+.apply 在运行前要对作为参数的数组进行一系列检验和深拷贝，.call 则没有这些步骤
+ 
+第二个地方是 ：
+// 用于原型转换使用
+var Ctor = function(){};
+// 用于创建 新对象
+var baseCreate = function(prototype){
+　　// 如果prototype 参数不是对象 直接返回一个空对象
+　　if (!_.isObject(prototype)) return {};
+
+　　// 如果浏览器支持es5 Object.create
+　　if (nativeCreate) return nativeCreate(prototype);
+
+　　Ctor.prototype = prototype;
+　　var result = new Ctor;
+　　Ctor.prototype = null; // 这里注意了 虽然Ctor.prototype 重置为null 。result实例对象的 proto还是指向 原来的那个原型对象 所以一样能调用原来原型对象的方法
+　　return result;
+};
+ 
+ 
+当一个类 new 出这个类的实例化对象后 再重置这个类的原型对象  前面new 出来的实例对象 还是指向的是 原来的 那个原型对象 所以这里 有两点需要注意：
+1. 实例对象 无法调用新的原型对象上的方法。
+2.这里可以 做一个优化 把不用的原型对象置为null  从而释放内存。 
